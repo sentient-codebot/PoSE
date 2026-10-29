@@ -1,0 +1,100 @@
+WEBVTT
+
+NOTE PoSE explainer, silent video. Cues repeat the on-screen text.
+
+1
+00:00:00.150 --> 00:00:03.000
+PoSE
+Bayesian Distribution System State Estimation with Flow Matching
+
+2
+00:00:03.300 --> 00:00:07.850
+A medium-voltage feeder is measured at the primary substation and at a few remote points.
+
+3
+00:00:07.950 --> 00:00:10.400
+What is the state everywhere else?
+
+4
+00:00:11.000 --> 00:00:15.600
+Weighted least squares reduces each substation to a mean and a variance.
+
+5
+00:00:15.800 --> 00:00:20.600
+Rooftop PV makes midday injections non-Gaussian and correlated across substations.
+
+6
+00:00:21.100 --> 00:00:27.000
+Deep learning estimators trained on measurement–state pairs also learn the power flow and one measurement set.
+
+7
+00:00:27.200 --> 00:00:30.900
+New meters, noise level or topology: retrain.
+
+8
+00:00:31.200 --> 00:00:38.700
+PoSE learns only what the operator does not know.
+Known: power flow, topology, sensor locations and noise → likelihood
+Unknown: the joint distribution of the injections → learned prior
+
+9
+00:00:39.000 --> 00:00:49.300
+A flow matching prior, trained once on historical data, transports noise to injections.
+
+10
+00:00:49.600 --> 00:01:00.300
+At every step, a noise-aware Kalman-type correction pulls the estimate towards the measurements.
+
+11
+00:01:00.600 --> 00:01:04.250
+Every posterior sample is a physically consistent operating point.
+
+12
+00:01:04.900 --> 00:01:08.000
+One trained prior serves any measurement set, noise level and topology.
+
+13
+00:01:08.300 --> 00:01:13.100
+Add measurements and the posterior tightens. WLS, beside each cloud, uses Gaussian pseudo-measurements.
+
+14
+00:01:13.300 --> 00:01:20.300
+A typical midday test snapshot. Here PoSE's advantage over WLS equals its median advantage across the test snapshots of this setting.
+
+15
+00:01:20.500 --> 00:01:28.200
+Every substation is metered except bus 13. Its cloud stays wide, because the feeder-head measurement is too coarse to pin down a single substation.
+
+16
+00:01:28.700 --> 00:01:36.000
+6.7–7.5%
+lower injection CRPS than a full-covariance Gaussian prior
+IEEE 33-bus feeder with three years of measured load and rooftop PV, in all 12 settings
+
+17
+00:01:36.200 --> 00:01:43.500
+0.870–0.877
+coverage of the 90% intervals, against an attainable 0.882
+Supervised estimators cover 37–78%
+
+18
+00:01:43.700 --> 00:01:51.000
+240-bus
+unbalanced three-phase Iowa feeder
+lowest injection, voltage and branch-current errors of all estimators
+
+19
+00:01:51.200 --> 00:01:58.500
+0.2–0.6 s
+per snapshot with PoSE-fast, at the same accuracy
+Without retraining, it beats Gaussian priors and retrained supervised estimators on seven reconfigured topologies
+
+20
+00:01:58.900 --> 00:02:12.500
+PoSE
+Bayesian Distribution System State Estimation with Flow Matching
+Nan Lin, Peter Palensky, Pedro P. Vergara
+Delft University of Technology
+Code on GitHub
+github.com/sentient-codebot/PoSE
+github.com/distributionnetworksTUDelft/PoSE

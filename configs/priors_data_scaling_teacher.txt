@@ -1,0 +1,2 @@
+--data data/fluvius_base/snapshots.npz --output_dir results/world/teacher --run_name base --seed 0 --context cyclic --dropout 0.1 --weight_decay 0.1 --width 512 --num_steps 2000 --train_splits train,val,test --checkpoint last
+--data data/fluvius_high_pv/snapshots.npz --output_dir results/world/teacher --run_name high_pv --seed 0 --context cyclic --dropout 0.1 --weight_decay 0.1 --width 512 --num_steps 2000 --train_splits train,val,test --checkpoint last

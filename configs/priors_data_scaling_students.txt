@@ -1,0 +1,12 @@
+--data data/world/base/n2k/snapshots.npz --output_dir results/world/priors/base/n2k --run_name w256 --seed 0 --context cyclic --dropout 0.1 --weight_decay 0.1 --width 256 --num_steps 10000
+--data data/world/base/n2k/snapshots.npz --output_dir results/world/priors/base/n2k --run_name w512 --seed 0 --context cyclic --dropout 0.1 --weight_decay 0.1 --width 512 --num_steps 10000
+--data data/world/base/n19k/snapshots.npz --output_dir results/world/priors/base/n19k --run_name w256 --seed 0 --context cyclic --dropout 0.1 --weight_decay 0.1 --width 256 --num_steps 10000
+--data data/world/base/n19k/snapshots.npz --output_dir results/world/priors/base/n19k --run_name w512 --seed 0 --context cyclic --dropout 0.1 --weight_decay 0.1 --width 512 --num_steps 10000
+--data data/world/base/n190k/snapshots.npz --output_dir results/world/priors/base/n190k --run_name w256 --seed 0 --context cyclic --dropout 0.1 --weight_decay 0.1 --width 256 --num_steps 10000
+--data data/world/base/n190k/snapshots.npz --output_dir results/world/priors/base/n190k --run_name w512 --seed 0 --context cyclic --dropout 0.1 --weight_decay 0.1 --width 512 --num_steps 10000
+--data data/world/high_pv/n2k/snapshots.npz --output_dir results/world/priors/high_pv/n2k --run_name w256 --seed 0 --context cyclic --dropout 0.1 --weight_decay 0.1 --width 256 --num_steps 10000
+--data data/world/high_pv/n2k/snapshots.npz --output_dir results/world/priors/high_pv/n2k --run_name w512 --seed 0 --context cyclic --dropout 0.1 --weight_decay 0.1 --width 512 --num_steps 10000
+--data data/world/high_pv/n19k/snapshots.npz --output_dir results/world/priors/high_pv/n19k --run_name w256 --seed 0 --context cyclic --dropout 0.1 --weight_decay 0.1 --width 256 --num_steps 10000
+--data data/world/high_pv/n19k/snapshots.npz --output_dir results/world/priors/high_pv/n19k --run_name w512 --seed 0 --context cyclic --dropout 0.1 --weight_decay 0.1 --width 512 --num_steps 10000
+--data data/world/high_pv/n190k/snapshots.npz --output_dir results/world/priors/high_pv/n190k --run_name w256 --seed 0 --context cyclic --dropout 0.1 --weight_decay 0.1 --width 256 --num_steps 10000
+--data data/world/high_pv/n190k/snapshots.npz --output_dir results/world/priors/high_pv/n190k --run_name w512 --seed 0 --context cyclic --dropout 0.1 --weight_decay 0.1 --width 512 --num_steps 10000

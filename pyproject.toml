@@ -1,0 +1,66 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "pose"
+version = "1.0.0"
+description = "Posterior sampling for distribution system state estimation"
+readme = "README.md"
+license = { text = "MIT" }
+authors = [
+    { name = "Nan Lin", email = "N.Lin@tudelft.nl" },
+]
+requires-python = ">=3.12"
+dependencies = [
+    "numpy>=2.1",
+    "openpyxl>=3.1",
+    "pandas>=2.2",
+    "scikit-learn>=1.6",
+    "torch>=2.6",
+]
+
+[project.optional-dependencies]
+plots = [
+    "matplotlib>=3.10",
+    "scipy>=1.15",
+]
+validation = [
+    "opendssdirect.py>=0.9",
+    "pandapower>=2.14",
+]
+dev = [
+    "pytest>=8.3",
+    "ruff>=0.13",
+]
+
+[project.urls]
+Homepage = "https://sentient-codebot.github.io/PoSE/"
+Repository = "https://github.com/sentient-codebot/PoSE"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/pose"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py312"
+lint.extend-select = [
+    "I",
+    "B",
+    "C4",
+    "UP",
+]
+lint.extend-ignore = ["F722", "F821", "E731"]
+fix = true
+respect-gitignore = true
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+
+[tool.ruff.lint.isort]
+known-first-party = ["pose"]
+force-single-line = false
+lines-after-imports = 2

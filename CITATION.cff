@@ -1,0 +1,19 @@
+cff-version: 1.2.0
+message: "If you use this code, please cite the paper and this repository."
+title: "Bayesian Distribution System State Estimation with Flow Matching"
+version: 1.0.0
+date-released: 2026-10-29
+license: MIT
+url: "https://sentient-codebot.github.io/PoSE/"
+repository-code: "https://github.com/sentient-codebot/PoSE"
+authors:
+  - family-names: Lin
+    given-names: Nan
+    email: N.Lin@tudelft.nl
+    affiliation: "Delft University of Technology"
+  - family-names: Palensky
+    given-names: Peter
+    affiliation: "Delft University of Technology"
+  - family-names: Vergara
+    given-names: Pedro P.
+    affiliation: "Delft University of Technology"

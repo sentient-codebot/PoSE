@@ -1,0 +1,6 @@
+--data data/ausgrid_p/snapshots.npz --mset S1 --noise nominal --design pilot --save_samples --method B1 --output_dir results/ausgrid_p/cells/ausgrid/real/ausgrid_S1_nominal_B1
+--data data/ausgrid_p/snapshots.npz --mset S1 --noise nominal --design pilot --save_samples --method B2 --output_dir results/ausgrid_p/cells/ausgrid/real/ausgrid_S1_nominal_B2
+--data data/ausgrid_p/snapshots.npz --mset S1 --noise nominal --design pilot --save_samples --prior checkpoints/prior_ausgrid_active_power.pt --method M2 --sampler euler --output_dir results/ausgrid_p/cells/ausgrid/real/ausgrid_S1_nominal_M2-euler
+--data data/ausgrid_p/snapshots.npz --mset S2 --noise nominal --design pilot --save_samples --method B1 --output_dir results/ausgrid_p/cells/ausgrid/real/ausgrid_S2_nominal_B1
+--data data/ausgrid_p/snapshots.npz --mset S2 --noise nominal --design pilot --save_samples --method B2 --output_dir results/ausgrid_p/cells/ausgrid/real/ausgrid_S2_nominal_B2
+--data data/ausgrid_p/snapshots.npz --mset S2 --noise nominal --design pilot --save_samples --prior checkpoints/prior_ausgrid_active_power.pt --method M2 --sampler euler --output_dir results/ausgrid_p/cells/ausgrid/real/ausgrid_S2_nominal_M2-euler

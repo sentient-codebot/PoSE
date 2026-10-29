@@ -1,0 +1,7 @@
+--data data/ausgrid/snapshots.npz --output_dir results/ausgrid/priors/ausgrid --run_name s0 --seed 0 --context cyclic --width 512 --dropout 0.1 --weight_decay 0.1 --num_steps 10000
+--data data/ausgrid/snapshots.npz --output_dir results/ausgrid/priors/ausgrid --run_name s1 --seed 1 --context cyclic --width 512 --dropout 0.1 --weight_decay 0.1 --num_steps 10000
+--data data/ausgrid/snapshots.npz --output_dir results/ausgrid/priors/ausgrid --run_name s2 --seed 2 --context cyclic --width 512 --dropout 0.1 --weight_decay 0.1 --num_steps 10000
+--data data/ausgrid_high_pv/snapshots.npz --output_dir results/ausgrid/priors/ausgrid_hpv --run_name s0 --seed 0 --context cyclic --width 512 --dropout 0.1 --weight_decay 0.1 --num_steps 10000
+--data data/ausgrid_high_pv/snapshots.npz --output_dir results/ausgrid/priors/ausgrid_hpv --run_name s1 --seed 1 --context cyclic --width 512 --dropout 0.1 --weight_decay 0.1 --num_steps 10000
+--data data/ausgrid_high_pv/snapshots.npz --output_dir results/ausgrid/priors/ausgrid_hpv --run_name s2 --seed 2 --context cyclic --width 512 --dropout 0.1 --weight_decay 0.1 --num_steps 10000
+--data data/fluvius/snapshots.npz --output_dir results/fluvius/priors/base --run_name s0 --seed 0 --context cyclic --width 256 --dropout 0.1 --weight_decay 0.1 --num_steps 10000

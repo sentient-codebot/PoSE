@@ -1,0 +1,21 @@
+# Data and results are reproduced locally, not versioned.
+/data/
+/results/
+/build/
+/dist/
+/checkpoints/*.pt
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.pytest_cache/
+.ruff_cache/
+
+# macOS
+.DS_Store
+
+# Editors
+.vscode/
+.idea/

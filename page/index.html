@@ -1,0 +1,1121 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bayesian Distribution System State Estimation with Flow Matching</title>
+<meta name="description" content="PoSE, Bayesian distribution system state estimation with a flow matching prior and a noise-aware Kalman-type correction.">
+<link rel="canonical" href="https://sentient-codebot.github.io/PoSE/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Bayesian Distribution System State Estimation with Flow Matching">
+<meta property="og:description" content="PoSE learns a flow matching prior over substation injections and adds noisy measurements through a noise-aware Kalman-type correction.">
+<meta property="og:url" content="https://sentient-codebot.github.io/PoSE/">
+<meta property="og:image" content="https://sentient-codebot.github.io/PoSE/assets/video_poster.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%232f6fdb'/%3E%3Cg fill='%23fff'%3E%3Ccircle cx='9' cy='19' r='2.2'/%3E%3Ccircle cx='16' cy='12' r='2.2'/%3E%3Ccircle cx='23' cy='17' r='2.2'/%3E%3C/g%3E%3C/svg%3E">
+<link rel="stylesheet" href="assets/fonts/fonts.css">
+<style>
+:root {
+  --bg: #fbfaf7;
+  --bg-2: #f3f1ec;
+  --card: #ffffff;
+  --ink: #15171c;
+  --ink-2: #3b404b;
+  --muted: #646a76;
+  --line: #dcd8cf;
+  --line-2: #ebe8e1;
+  --accent: #2f6fdb;
+  --accent-ink: #1f56b5;
+  --accent-soft: rgba(47, 111, 219, 0.12);
+  --pv: #e4652a;
+  --truth: #15171c;
+  --wls: #9a3db8;
+  --sample: 47, 111, 219;
+  --sample-alpha: 0.55;
+  --figure-bg: #ffffff;
+  --shadow: 0 1px 2px rgba(20, 20, 30, .05), 0 8px 24px rgba(20, 20, 30, .06);
+  --serif: "Source Serif 4", "Iowan Old Style", Georgia, serif;
+  --sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --measure: 44rem;
+  --wide: 68rem;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1014;
+    --bg-2: #151820;
+    --card: #171a21;
+    --ink: #eceef2;
+    --ink-2: #c6cad3;
+    --muted: #9198a5;
+    --line: #2b303b;
+    --line-2: #20242d;
+    --accent: #6f9fff;
+    --accent-ink: #9dbdff;
+    --accent-soft: rgba(111, 159, 255, 0.14);
+    --pv: #ff8d55;
+    --truth: #f4f5f7;
+    --wls: #d58cf2;
+    --sample: 125, 168, 255;
+    --sample-alpha: 0.6;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 8px 24px rgba(0, 0, 0, .25);
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e1014;
+  --bg-2: #151820;
+  --card: #171a21;
+  --ink: #eceef2;
+  --ink-2: #c6cad3;
+  --muted: #9198a5;
+  --line: #2b303b;
+  --line-2: #20242d;
+  --accent: #6f9fff;
+  --accent-ink: #9dbdff;
+  --accent-soft: rgba(111, 159, 255, 0.14);
+  --pv: #ff8d55;
+  --truth: #f4f5f7;
+  --wls: #d58cf2;
+  --sample: 125, 168, 255;
+  --sample-alpha: 0.6;
+  --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 8px 24px rgba(0, 0, 0, .25);
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 400 17px/1.6 var(--sans);
+  font-feature-settings: "cv11", "ss01";
+  text-rendering: optimizeLegibility;
+}
+a { color: var(--accent-ink); text-underline-offset: 2px; }
+a:hover { text-decoration-thickness: 2px; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+.wrap { max-width: var(--wide); margin: 0 auto; padding: 0 24px; }
+.measure { max-width: var(--measure); }
+section { padding: 56px 0 8px; }
+h2 {
+  font: 600 1.55rem/1.25 var(--serif);
+  letter-spacing: -0.01em;
+  margin: 0 0 14px;
+}
+h3 { font: 600 1.05rem/1.35 var(--sans); margin: 0 0 6px; }
+p { margin: 0 0 14px; color: var(--ink-2); }
+.eyebrow {
+  font: 600 .74rem/1 var(--sans);
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--accent-ink);
+  margin: 0 0 10px;
+}
+.math { font-family: var(--serif); font-style: italic; white-space: nowrap; }
+.math .up { font-style: normal; }
+
+/* Header */
+header.top { padding: 22px 0 0; }
+.topbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.brand { font: 700 .95rem/1 var(--sans); letter-spacing: .02em; color: var(--ink); text-decoration: none; }
+.brand span { color: var(--accent); }
+.theme-btn {
+  appearance: none; border: 1px solid var(--line); background: var(--card); color: var(--muted);
+  border-radius: 999px; padding: 6px 12px; font: 500 .8rem/1 var(--sans); cursor: pointer;
+}
+.theme-btn:hover { color: var(--ink); }
+.title-block { padding: 48px 0 8px; max-width: 54rem; }
+h1 {
+  font: 600 clamp(2rem, 1.2rem + 3.2vw, 3.35rem)/1.08 var(--serif);
+  letter-spacing: -0.02em;
+  margin: 0 0 18px;
+}
+h1 .pose { color: var(--accent); }
+.authors { font-size: 1rem; color: var(--ink-2); margin: 0 0 4px; }
+.affil { font-size: .92rem; color: var(--muted); margin: 0 0 22px; }
+.buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+.btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 9px 15px; border-radius: 999px;
+  border: 1px solid var(--line); background: var(--card); color: var(--ink);
+  font: 500 .9rem/1 var(--sans); text-decoration: none; box-shadow: var(--shadow);
+}
+.btn svg { width: 15px; height: 15px; }
+.btn:hover { border-color: var(--accent); color: var(--accent-ink); }
+.btn[aria-disabled="true"] { color: var(--muted); box-shadow: none; cursor: default; }
+.btn[aria-disabled="true"]:hover { border-color: var(--line); color: var(--muted); }
+.btn small { font-size: .72rem; color: var(--muted); font-weight: 400; }
+
+.tldr {
+  margin: 34px 0 0; padding: 18px 22px; max-width: 54rem;
+  border-left: 3px solid var(--accent); background: var(--accent-soft); border-radius: 0 10px 10px 0;
+}
+.tldr p { margin: 0; color: var(--ink); font-size: 1.04rem; }
+.tldr strong { font-weight: 650; }
+
+/* Hero */
+.hero { padding-top: 40px; }
+.hero-card {
+  background: var(--card); border: 1px solid var(--line-2); border-radius: 16px;
+  box-shadow: var(--shadow); padding: 18px 18px 14px;
+}
+.hero-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 12px 20px; margin-bottom: 8px; }
+.hero-head h2 { font-size: 1.25rem; margin: 0; }
+.hero-head p { margin: 2px 0 0; font-size: .9rem; color: var(--muted); }
+.seg { display: inline-flex; flex-wrap: wrap; gap: 4px; padding: 4px; background: var(--bg-2); border-radius: 12px; border: 1px solid var(--line-2); }
+.seg button {
+  appearance: none; border: 0; background: transparent; color: var(--ink-2);
+  padding: 7px 12px; border-radius: 9px; cursor: pointer;
+  font: 600 .86rem/1.1 var(--sans); text-align: left;
+}
+.seg button span { display: block; font-weight: 400; font-size: .72rem; color: var(--muted); margin-top: 2px; }
+.seg button[aria-pressed="true"] { background: var(--card); color: var(--accent-ink); box-shadow: var(--shadow); }
+.seg button[aria-pressed="true"] span { color: var(--ink-2); }
+.seg button[hidden] { display: none; }
+.seg .demo-first { margin-left: 9px; position: relative; }
+.seg .demo-first::before { content: ""; position: absolute; left: -7px; top: 7px; bottom: 7px; border-left: 1px dashed var(--line); }
+.canvas-box { position: relative; width: 100%; margin-top: 6px; }
+#feeder { display: block; width: 100%; touch-action: manipulation; }
+.tip {
+  position: absolute; pointer-events: none; z-index: 2;
+  background: var(--ink); color: var(--bg); font: 500 .76rem/1.35 var(--sans);
+  padding: 6px 9px; border-radius: 7px; white-space: nowrap; opacity: 0; transform: translate(-50%, -120%);
+  transition: opacity .12s;
+}
+.hero-foot { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px 18px; margin-top: 8px; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: .78rem; color: var(--muted); align-items: center; }
+.legend i { display: inline-block; vertical-align: -1px; margin-right: 6px; }
+.lg-dot { width: 7px; height: 7px; border-radius: 50%; background: rgb(var(--sample)); opacity: .8; }
+.lg-truth { width: 14px; height: 2px; background: var(--truth); vertical-align: 3px !important; }
+.lg-pv { width: 8px; height: 8px; border-radius: 50%; background: var(--pv); }
+.lg-wls { width: 7px; height: 7px; border-radius: 50%; background: var(--wls); }
+.legend [hidden] { display: none; }
+.lg-meter { width: 9px; height: 9px; border: 1.6px solid var(--ink); transform: rotate(45deg); }
+.replay {
+  appearance: none; border: 1px solid var(--line); background: transparent; color: var(--ink-2);
+  border-radius: 999px; padding: 6px 12px; font: 500 .8rem/1 var(--sans); cursor: pointer;
+  display: inline-flex; gap: 6px; align-items: center;
+}
+.foot-actions { display: inline-flex; flex-wrap: wrap; gap: 8px; }
+.replay[aria-pressed="true"] { color: var(--wls); border-color: var(--wls); }
+.replay[hidden] { display: none; }
+.replay:hover { color: var(--accent-ink); border-color: var(--accent); }
+.caption { font-size: .84rem; color: var(--muted); margin: 10px 2px 0; line-height: 1.5; }
+.caption b { color: var(--ink-2); font-weight: 600; }
+.badge {
+  display: inline-block; font: 700 .66rem/1 var(--sans); letter-spacing: .08em; text-transform: uppercase;
+  padding: 4px 7px; border-radius: 5px; vertical-align: 1px; margin-right: 6px;
+}
+.badge.real { background: var(--accent-soft); color: var(--accent-ink); }
+.badge.illus { background: rgba(228, 101, 42, .14); color: var(--pv); }
+
+/* Steps */
+.steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 22px; counter-reset: step; }
+.step {
+  background: var(--card); border: 1px solid var(--line-2); border-radius: 14px; padding: 18px 18px 8px;
+  position: relative;
+}
+.step .num {
+  font: 600 .78rem/1 var(--mono); color: var(--accent-ink); background: var(--accent-soft);
+  border-radius: 6px; padding: 4px 7px; display: inline-block; margin-bottom: 12px;
+}
+.step svg.ic { display: block; width: 100%; height: 86px; margin: 0 0 12px; }
+.step p { font-size: .93rem; }
+.eq {
+  font: italic 400 1.08rem/1.5 var(--serif); color: var(--ink);
+  background: var(--bg-2); border-radius: 10px; padding: 12px 14px; margin: 4px 0 14px; overflow-x: auto;
+}
+.eq .up { font-style: normal; }
+.after { margin-top: 18px; }
+
+/* Compare */
+.compare { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 22px; }
+.panel { border-radius: 14px; padding: 18px; border: 1px solid var(--line-2); background: var(--card); }
+.panel.ours { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.panel h3 { margin-bottom: 10px; }
+.panel svg { width: 100%; height: auto; display: block; margin: 4px 0 12px; }
+.panel p { font-size: .93rem; margin-bottom: 8px; }
+.kv { font: 600 1.05rem/1.2 var(--sans); color: var(--ink); }
+
+/* Results */
+.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin: 22px 0 8px; }
+.stat { background: var(--card); border: 1px solid var(--line-2); border-radius: 14px; padding: 16px 16px 12px; }
+.stat .big { font: 600 clamp(1.5rem, 1rem + 1.4vw, 2.05rem)/1.05 var(--serif); color: var(--accent-ink); letter-spacing: -0.01em; white-space: nowrap; }
+.stat .lab { font-size: .86rem; color: var(--ink-2); margin-top: 8px; line-height: 1.45; }
+.figs { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 18px; }
+figure { margin: 0; }
+.fig-paper { background: var(--figure-bg); border-radius: 12px; border: 1px solid var(--line-2); padding: 10px; }
+.fig-paper img { display: block; width: 100%; height: auto; }
+figcaption { font-size: .84rem; color: var(--muted); margin-top: 8px; line-height: 1.5; }
+figcaption b { color: var(--ink-2); font-weight: 600; }
+.fig-wide { grid-column: 1 / -1; }
+.tbl-wrap { overflow-x: auto; margin-top: 18px; border: 1px solid var(--line-2); border-radius: 12px; background: var(--card); }
+table { border-collapse: collapse; width: 100%; font-size: .86rem; font-variant-numeric: tabular-nums; }
+th, td { padding: 8px 12px; text-align: right; border-bottom: 1px solid var(--line-2); white-space: nowrap; }
+th:first-child, td:first-child { text-align: left; }
+thead th { font-weight: 600; color: var(--muted); font-size: .76rem; letter-spacing: .02em; }
+tbody tr:last-child td { border-bottom: 0; }
+tr.ours td { color: var(--accent-ink); font-weight: 650; background: var(--accent-soft); }
+.tbl-cap { font-size: .84rem; color: var(--muted); padding: 10px 12px 0; text-align: left; }
+
+/* Video */
+.video-box {
+  position: relative; aspect-ratio: 16 / 9; width: 100%; border-radius: 14px; overflow: hidden;
+  background: #0b0d11; border: 1px solid var(--line-2); margin-top: 18px;
+}
+.video-box video { width: 100%; height: 100%; display: block; }
+
+/* BibTeX */
+.bib { position: relative; margin-top: 14px; }
+.bib pre {
+  margin: 0; background: var(--bg-2); border: 1px solid var(--line-2); border-radius: 12px;
+  padding: 16px 18px; font: 400 .82rem/1.6 var(--mono); color: var(--ink-2); overflow-x: auto;
+}
+.copy {
+  position: absolute; top: 10px; right: 10px; appearance: none; border: 1px solid var(--line);
+  background: var(--card); color: var(--ink-2); border-radius: 8px; padding: 5px 10px;
+  font: 500 .76rem/1 var(--sans); cursor: pointer;
+}
+footer { padding: 56px 0 48px; color: var(--muted); font-size: .82rem; }
+footer p { color: var(--muted); }
+footer hr { border: 0; border-top: 1px solid var(--line); margin: 0 0 18px; }
+
+@media (max-width: 900px) {
+  .steps { grid-template-columns: 1fr; }
+  .stats { grid-template-columns: 1fr 1fr; }
+  .step svg.ic { height: 74px; max-width: 320px; }
+}
+@media (max-width: 680px) {
+  body { font-size: 16px; }
+  .wrap { padding: 0 16px; }
+  .compare, .figs { grid-template-columns: 1fr; }
+  .hero-card { padding: 14px 10px 12px; border-radius: 14px; }
+  .seg { width: 100%; display: grid; grid-template-columns: repeat(4, 1fr); }
+  .seg button { padding: 7px 6px; text-align: center; }
+  .seg button span { display: none; }
+  .seg .demo-first { margin-left: 0; }
+  .seg .demo-first::before { display: none; }
+  section { padding-top: 44px; }
+  .title-block { padding-top: 32px; }
+}
+@media (max-width: 660px) {
+  .lg-truth { width: 9px; height: 9px; border-radius: 50%; border: 1.5px solid var(--truth); background: transparent; vertical-align: -1px !important; }
+}
+@media (max-width: 420px) {
+  .stats { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <div class="topbar">
+      <a class="brand" href="#">Po<span>SE</span></a>
+      <button class="theme-btn" id="theme" type="button" aria-label="Colour theme">Theme: auto</button>
+    </div>
+    <div class="title-block">
+      <p class="eyebrow">PoSE</p>
+      <h1>Bayesian Distribution System State Estimation with Flow Matching</h1>
+      <p class="authors">Nan Lin, Peter Palensky, Pedro P. Vergara</p>
+      <p class="affil">Intelligent Electrical Power Grids Group, Delft University of Technology</p>
+      <nav class="buttons" aria-label="Links">
+        <!-- Placeholder: replace href and drop aria-disabled when the arXiv URL exists. -->
+        <a class="btn" href="#" aria-disabled="true" title="Link added on publication">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M4 1.5h5.5L13 5v9.5H4z"/><path d="M9 1.5V5h4M6 8.5h5M6 11h5"/></svg>
+          Paper <small>soon</small></a>
+        <a class="btn" href="https://github.com/sentient-codebot/PoSE" rel="noopener">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M5.5 4 1.5 8l4 4M10.5 4l4 4-4 4"/></svg>
+          Code</a>
+        <a class="btn" href="#video">
+          <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M4.5 2.8v10.4L13 8z"/></svg>
+          Video</a>
+        <a class="btn" href="#bibtex">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M5 3.5c-1.5 0-2 .7-2 2v1c0 1-.5 1.5-1.5 1.5 1 0 1.5.5 1.5 1.5v1c0 1.3.5 2 2 2M11 3.5c1.5 0 2 .7 2 2v1c0 1 .5 1.5 1.5 1.5-1 0-1.5.5-1.5 1.5v1c0 1.3-.5 2-2 2"/></svg>
+          BibTeX</a>
+      </nav>
+    </div>
+    <div class="tldr">
+      <p><strong>TL;DR.</strong> PoSE learns only what the grid operator does not know: the joint
+      distribution of the secondary-substation injections, by flow matching on historical data. The
+      power flow, the topology and the measurements enter only at sampling, through a noise-aware
+      Kalman-type correction. Every posterior sample is a physically consistent operating point, and
+      one trained prior serves any measurement set, noise level and topology.</p>
+    </div>
+  </div>
+</header>
+
+<main>
+<section class="hero" aria-labelledby="hero-title">
+  <div class="wrap">
+    <div class="hero-card">
+      <div class="hero-head">
+        <div>
+          <h2 id="hero-title">Add measurements, watch the posterior tighten</h2>
+          <p>IEEE 33-bus feeder. Each cloud is one secondary substation; each dot is one sample.</p>
+        </div>
+        <div class="seg" role="group" aria-label="Measurement set">
+          <button type="button" data-state="prior" aria-pressed="false">Prior<span>no meters</span></button>
+          <button type="button" data-state="S1" aria-pressed="false">S1<span>head P, Q</span></button>
+          <button type="button" data-state="S2" aria-pressed="false">S2<span>+ 3 voltages</span></button>
+          <button type="button" data-state="S3" aria-pressed="false">S3<span>+ 2 substations</span></button>
+          <!-- Demo sets S4-S7 add metered substations; shown when their samples exist. -->
+          <button type="button" data-state="S4" aria-pressed="false" class="demo-first" hidden>S4<span>8 substations</span></button>
+          <button type="button" data-state="S5" aria-pressed="false" hidden>S5<span>16 substations</span></button>
+          <button type="button" data-state="S6" aria-pressed="false" hidden>S6<span>24 substations</span></button>
+          <button type="button" data-state="S7" aria-pressed="false" hidden>S7<span>all but bus 13</span></button>
+        </div>
+      </div>
+      <div class="canvas-box">
+        <canvas id="feeder" role="img" aria-label="IEEE 33-bus feeder with posterior samples per bus"></canvas>
+        <div class="tip" id="tip" aria-hidden="true"></div>
+      </div>
+      <div class="hero-foot">
+        <div class="legend" aria-hidden="true">
+          <span><i class="lg-dot"></i>PoSE sample</span>
+          <span><i class="lg-truth"></i>true injection</span>
+          <span><i class="lg-pv"></i>PV-heavy (buses 13–18)</span>
+          <span><i class="lg-meter"></i>meter</span>
+          <span id="lg-wls" hidden><i class="lg-wls"></i>WLS sample</span>
+        </div>
+        <div class="foot-actions">
+        <button class="replay" id="wls-toggle" type="button" aria-pressed="true" hidden>Compare with WLS</button>
+        <button class="replay" id="replay" type="button">
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M2.5 8a5.5 5.5 0 1 0 1.7-4"/><path d="M2 1.8v3.6h3.6"/></svg>
+          <span id="replay-label">Replay: noise → prior → S1 → S2 → S3</span></button>
+        </div>
+      </div>
+      <p class="caption" id="caption" aria-live="polite"></p>
+    </div>
+  </div>
+</section>
+
+<section aria-labelledby="how">
+  <div class="wrap">
+    <p class="eyebrow">How it works</p>
+    <h2 id="how">Learn the prior once; bring in the physics and the meters at sampling</h2>
+    <p class="measure">DSSE on a medium-voltage feeder is underdetermined: with few real-time measurements,
+    pseudo-measurements of the secondary substations carry most of the information. In Bayesian terms
+    they are the prior, and an unobservable feeder is an ill-posed inverse problem. PoSE keeps the two
+    factors of the posterior <span class="math">p(s | y, c) ∝ p(y | s) p(s | c)</span> apart.</p>
+    <div class="steps">
+      <div class="step">
+        <span class="num">01</span>
+        <svg class="ic" viewBox="0 0 300 86" aria-hidden="true">
+          <g fill="none" stroke="var(--line)" stroke-width="1"><path d="M10 74H290"/></g>
+          <path id="ic1" d="M10 74 C 60 74, 70 30, 105 26 C 130 23, 140 52, 160 50 C 185 48, 195 14, 225 12 C 255 10, 265 70, 290 74" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="2"/>
+          <g fill="var(--ink-2)" opacity=".5"><rect x="30" y="64" width="4" height="10"/><rect x="62" y="56" width="4" height="18"/><rect x="94" y="40" width="4" height="34"/><rect x="126" y="44" width="4" height="30"/><rect x="158" y="50" width="4" height="24"/><rect x="190" y="30" width="4" height="44"/><rect x="222" y="16" width="4" height="58"/><rect x="254" y="46" width="4" height="28"/></g>
+        </svg>
+        <h3>Learn the prior</h3>
+        <p>A conditional flow matching model learns <span class="math">p(s | c)</span>, the joint distribution
+        of the substation injections given month, time of day and day type. It is trained once on
+        historical data and contains no sensor or noise information.</p>
+      </div>
+      <div class="step">
+        <span class="num">02</span>
+        <svg class="ic" viewBox="0 0 300 86" aria-hidden="true">
+          <g fill="none" stroke="var(--accent)" stroke-width="1.4" opacity=".55">
+            <path d="M18 18 C 110 18, 160 40, 282 30"/><path d="M18 34 C 110 34, 170 50, 282 40"/>
+            <path d="M18 50 C 110 50, 170 44, 282 46"/><path d="M18 66 C 110 66, 170 52, 282 54"/>
+          </g>
+          <g fill="var(--muted)"><circle cx="18" cy="18" r="3.2"/><circle cx="18" cy="34" r="3.2"/><circle cx="18" cy="50" r="3.2"/><circle cx="18" cy="66" r="3.2"/></g>
+          <g fill="var(--accent)"><circle cx="282" cy="30" r="3.6"/><circle cx="282" cy="40" r="3.6"/><circle cx="282" cy="46" r="3.6"/><circle cx="282" cy="54" r="3.6"/></g>
+          <text x="18" y="84" font-size="10" fill="var(--muted)" font-family="Inter, sans-serif">noise</text>
+          <text x="282" y="84" font-size="10" fill="var(--muted)" text-anchor="end" font-family="Inter, sans-serif">samples</text>
+        </svg>
+        <h3>Sample</h3>
+        <p>Starting from Gaussian noise, an Euler sampler integrates the flow in 200 steps. At every step
+        the network gives an endpoint estimate <span class="math">ẑ</span> of the standardized injections.</p>
+      </div>
+      <div class="step">
+        <span class="num">03</span>
+        <svg class="ic" viewBox="0 0 300 86" aria-hidden="true">
+          <path d="M20 70 C 80 70, 95 22, 130 20 C 165 18, 180 70, 280 70" fill="none" stroke="var(--line)" stroke-width="2" stroke-dasharray="4 4"/>
+          <path d="M20 70 C 120 70, 150 8, 175 8 C 200 8, 215 70, 280 70" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="2"/>
+          <path d="M136 44 L 162 44" stroke="var(--ink)" stroke-width="1.6" marker-end="url(#arr)"/>
+          <defs><marker id="arr" viewBox="0 0 8 8" refX="6" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L8 4 L0 8z" fill="var(--ink)"/></marker></defs>
+          <path d="M178 2 v74" stroke="var(--pv)" stroke-width="1.6"/>
+          <text x="184" y="80" font-size="10" fill="var(--pv)" font-family="Inter, sans-serif">measurement</text>
+        </svg>
+        <h3>Correct with measurements and power flow</h3>
+        <p>A Kalman-type update pulls the endpoint estimate towards the measurements at every step. The
+        residual uses the AC power flow <span class="math">h</span>; the gain uses the LinDistFlow matrix,
+        the Tweedie covariance of the endpoint and the measurement noise plus the linearization error.</p>
+      </div>
+    </div>
+    <div class="after measure">
+      <div class="eq" aria-label="Correction: z tilde equals z hat plus K t times the residual y minus h of mu plus sigma times z hat">
+        z̃ = ẑ + K<sub>t</sub> ( y − h(μ + σ ⊙ ẑ) ),&nbsp;&nbsp;
+        K<sub>t</sub> = Σ<sub>t</sub>H<sub>z</sub><sup class="up">⊤</sup> ( H<sub>z</sub>Σ<sub>t</sub>H<sub>z</sub><sup class="up">⊤</sup> + R<sub>eff</sub> )<sup class="up">−1</sup>
+      </div>
+      <p>The correction is exact for a Gaussian prior and linear measurements, and its cost is set by the
+      sensors rather than the grid size: PoSE-fast forms the endpoint covariance only along the measured
+      directions. Each posterior sample is passed through the AC power flow, so every sampled voltage
+      and branch current satisfies the power flow equations, and the probability that a voltage or
+      thermal limit is violated is read directly from the samples.</p>
+    </div>
+  </div>
+</section>
+
+<section aria-labelledby="one-prior">
+  <div class="wrap">
+    <p class="eyebrow">One prior, any meters</p>
+    <h2 id="one-prior">The same weights serve any measurement set, noise level and topology</h2>
+    <p class="measure">Reconfiguration changes the feeder model but not the substation injections, so the
+    learned prior carries over unchanged. Only the power flow model and its linearization are rebuilt.</p>
+    <div class="compare">
+      <div class="panel">
+        <h3>Estimators trained on measurement–state pairs</h3>
+        <svg viewBox="0 0 320 120" aria-hidden="true">
+          <g font-family="Inter, sans-serif" font-size="10" fill="var(--muted)">
+            <text x="0" y="12">meter set × noise level × topology</text>
+          </g>
+          <g fill="var(--bg-2)" stroke="var(--line)">
+            <rect x="0" y="22" width="56" height="26" rx="6"/><rect x="64" y="22" width="56" height="26" rx="6"/><rect x="128" y="22" width="56" height="26" rx="6"/><rect x="192" y="22" width="56" height="26" rx="6"/><rect x="256" y="22" width="56" height="26" rx="6"/>
+            <rect x="0" y="56" width="56" height="26" rx="6"/><rect x="64" y="56" width="56" height="26" rx="6"/><rect x="128" y="56" width="56" height="26" rx="6"/><rect x="192" y="56" width="56" height="26" rx="6"/><rect x="256" y="56" width="56" height="26" rx="6"/>
+            <rect x="0" y="90" width="56" height="26" rx="6"/><rect x="64" y="90" width="56" height="26" rx="6"/><rect x="128" y="90" width="56" height="26" rx="6"/><rect x="192" y="90" width="56" height="26" rx="6"/><rect x="256" y="90" width="56" height="26" rx="6"/>
+          </g>
+          <g font-family="Inter, sans-serif" font-size="9.5" fill="var(--ink-2)" text-anchor="middle">
+            <text x="28" y="39">train</text><text x="92" y="39">train</text><text x="156" y="39">train</text><text x="220" y="39">train</text><text x="284" y="39">train</text>
+            <text x="28" y="73">train</text><text x="92" y="73">train</text><text x="156" y="73">train</text><text x="220" y="73">train</text><text x="284" y="73">train</text>
+            <text x="28" y="107">train</text><text x="92" y="107">train</text><text x="156" y="107">train</text><text x="220" y="107">train</text><text x="284" y="107">train</text>
+          </g>
+        </svg>
+        <p>The network learns the power flow and one measurement set. A new meter set, noise level or
+        topology means a new model.</p>
+        <p><span class="kv">52–59 s</span> to retrain a supervised estimator for one topology on one H100.</p>
+      </div>
+      <div class="panel ours">
+        <h3>PoSE</h3>
+        <svg viewBox="0 0 320 120" aria-hidden="true">
+          <g font-family="Inter, sans-serif" font-size="10" fill="var(--muted)"><text x="0" y="12">one prior, swapped physics</text></g>
+          <rect x="0" y="40" width="92" height="44" rx="8" fill="var(--accent-soft)" stroke="var(--accent)"/>
+          <text x="46" y="60" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="var(--accent-ink)">prior</text>
+          <text x="46" y="74" text-anchor="middle" font-family="Source Serif 4, serif" font-style="italic" font-size="11" fill="var(--accent-ink)">p(s | c)</text>
+          <g stroke="var(--line)" fill="none" stroke-width="1.4"><path d="M92 62 C 130 62, 130 33, 168 33"/><path d="M92 62 H168"/><path d="M92 62 C 130 62, 130 95, 168 95"/></g>
+          <g fill="var(--bg-2)" stroke="var(--line)"><rect x="168" y="20" width="144" height="26" rx="6"/><rect x="168" y="50" width="144" height="26" rx="6"/><rect x="168" y="82" width="144" height="26" rx="6"/></g>
+          <g font-family="Source Serif 4, serif" font-style="italic" font-size="11" fill="var(--ink-2)">
+            <text x="178" y="37">h, H, R  ·  meters S1</text><text x="178" y="67">h, H, R  ·  meters S2, S3</text><text x="178" y="99">h, H, Σ<tspan baseline-shift="sub" font-size="8">lin</tspan>  ·  new topology</text>
+          </g>
+        </svg>
+        <p>The measurement set, its noise and the feeder model enter only through the correction. The
+        prior is never retrained.</p>
+        <p><span class="kv">0.4–1.8 s</span> to rebuild <span class="math">h</span>, <span class="math">H</span> and <span class="math">Σ<sub class="up">lin</sub></span> for a new topology.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section aria-labelledby="results">
+  <div class="wrap">
+    <p class="eyebrow">Results</p>
+    <h2 id="results">Most accurate on two feeders, calibrated on the 33-bus feeder</h2>
+    <p class="measure">IEEE 33-bus feeder with three years of measured household load and rooftop PV data:
+    three measurement sets, two noise levels and two PV penetrations, 1,000 test snapshots each. The
+    unbalanced three-phase 240-bus Iowa feeder has 455 node-phases and a 386-dimensional injection state.</p>
+    <div class="stats">
+      <div class="stat"><div class="big">6.7–7.5%</div><div class="lab">lower injection CRPS than a full-covariance Gaussian prior, in all 12 settings</div></div>
+      <div class="stat"><div class="big">0.870–0.877</div><div class="lab">coverage of the 90% intervals, against an attainable 0.882. Supervised estimators cover <span style="white-space:nowrap">37–78%</span></div></div>
+      <div class="stat"><div class="big">240-bus</div><div class="lab">unbalanced three-phase Iowa feeder, lowest injection, voltage and branch-current errors of all estimators</div></div>
+      <div class="stat"><div class="big">0.2–0.6 s</div><div class="lab">per snapshot with PoSE-fast, at the same accuracy. Without retraining, it beats Gaussian priors and retrained supervised estimators on seven reconfigured topologies</div></div>
+    </div>
+
+    <div class="figs">
+      <figure class="fig-wide">
+        <div class="fig-paper"><img src="assets/fig/fig_crps_coverage.png" width="1600" height="790" loading="lazy" decoding="async" alt="Two dot plots. (a) Injection CRPS relative to WLS, PoSE with the largest reduction. (b) Coverage of 90 percent intervals, PoSE just left of the attainable line, Gaussian priors to its right, supervised estimators far left."></div>
+        <figcaption><b>Accuracy and calibration.</b> Injection accuracy and calibration of each estimator, one
+        marker per measurement set and noise level (six per PV scenario), 1,000 test snapshots each. (a) Injection
+        CRPS relative to WLS, the reference of the main table. (b) Coverage of the central 90% intervals of the
+        active injections. The vertical line is the coverage that exact samples attain with <span class="math">K</span>
+        = 100, 0.882.</figcaption>
+      </figure>
+      <figure class="fig-wide">
+        <div class="fig-paper"><img src="assets/fig/fig_week.png" width="1600" height="466" loading="lazy" decoding="async" alt="Four panels over one test week. Net injection at bus 13, voltage at bus 17, branch 12 current, and posterior densities at bus 13; PoSE bands tighten on the truth and stay asymmetric."></div>
+        <figcaption><b>One week of operation and the shape of the posterior.</b> Estimates over the test week of
+        8–14 July 2011 on the high-PV feeder, S2 at nominal noise, 100 samples. (a) Net active injection at bus 13.
+        (b) Voltage magnitude at bus 17, the unmeasured bus with the most true voltage violations in the week.
+        (c) Current of branch 12, which feeds bus 13, in percent of its rating. Bands are the central 50% and 90%
+        sample intervals of PoSE-fast, dashed lines those of WLS, and shading marks true violations. (d) Kernel
+        density estimates of the bus-13 injection at the marked snapshot under the learned prior and the PoSE-fast
+        posteriors for S1, S2 and S3, with the WLS posterior for S2 dashed. The PoSE-fast posteriors are asymmetric.</figcaption>
+      </figure>
+    </div>
+
+    <div class="tbl-wrap" role="region" aria-label="Main results table" tabindex="0">
+      <p class="tbl-cap">Injection CRPS (kW) and coverage of 90% intervals, S2 at nominal noise, IEEE 33-bus feeder.</p>
+      <table>
+        <thead>
+          <tr><th>Method</th><th>CRPS, base PV</th><th>Coverage</th><th>CRPS, high PV</th><th>Coverage</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>WLS</td><td>8.27</td><td>0.941</td><td>11.56</td><td>0.952</td></tr>
+          <tr><td>Correlated Gaussian</td><td>6.94</td><td>0.906</td><td>7.87</td><td>0.904</td></tr>
+          <tr><td>Pooled Gaussian</td><td>6.76</td><td>0.902</td><td>7.68</td><td>0.900</td></tr>
+          <tr><td>Gaussian mixture</td><td>6.91</td><td>0.879</td><td>7.89</td><td>0.881</td></tr>
+          <tr><td>Supervised MLP</td><td>7.78</td><td>0.415</td><td>8.61</td><td>0.490</td></tr>
+          <tr><td>Supervised flow</td><td>6.87</td><td>0.765</td><td>7.84</td><td>0.762</td></tr>
+          <tr class="ours"><td>PoSE (ours)</td><td>6.42</td><td>0.874</td><td>7.33</td><td>0.876</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section id="video" aria-labelledby="video-title">
+  <div class="wrap">
+    <p class="eyebrow">Video</p>
+    <h2 id="video-title">PoSE in about two minutes</h2>
+    <div class="video-box">
+      <video controls preload="none" playsinline poster="assets/video_poster.jpg" aria-label="PoSE explainer video">
+        <source src="assets/pose_explainer.mp4" type="video/mp4">
+        <track kind="captions" src="assets/pose_explainer.vtt" srclang="en" label="English">
+      </video>
+    </div>
+  </div>
+</section>
+
+<section id="bibtex" aria-labelledby="bib-title">
+  <div class="wrap">
+    <p class="eyebrow">Citation</p>
+    <h2 id="bib-title">BibTeX</h2>
+    <div class="bib">
+      <button class="copy" id="copy" type="button">Copy</button>
+<pre id="bibtext">@unpublished{lin_pose,
+  author = {Lin, Nan and Palensky, Peter and Vergara, Pedro P.},
+  title  = {Bayesian Distribution System State
+            Estimation with Flow Matching},
+  note   = {Manuscript submitted for publication},
+  year   = {2026}
+}</pre>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <hr>
+    <p>Data: Ausgrid solar home electricity data, Fluvius consumption profiles and the Iowa
+    distribution test system, publicly released by their owners. Code to reproduce the flow matching
+    sampler and benchmarks is available at
+    <a href="https://github.com/sentient-codebot/PoSE" rel="noopener">github.com/sentient-codebot/PoSE</a>
+    and
+    <a href="https://github.com/distributionnetworksTUDelft/PoSE" rel="noopener">github.com/distributionnetworksTUDelft/PoSE</a>.</p>
+    <p>This page loads no external resources and uses no cookies or tracking.</p>
+  </div>
+</footer>
+
+<script src="assets/samples.js"></script>
+<script>
+(() => {
+  "use strict";
+
+  /* ---------- Theme ---------- */
+  const root = document.documentElement;
+  const themeBtn = document.getElementById("theme");
+  const THEMES = ["auto", "light", "dark"];
+  let theme = "auto";
+  try { theme = localStorage.getItem("pose-theme") || "auto"; } catch (e) { /* storage blocked */ }
+  function applyTheme() {
+    if (theme === "auto") root.removeAttribute("data-theme"); else root.setAttribute("data-theme", theme);
+    themeBtn.textContent = "Theme: " + theme;
+    hero && hero.refreshColors();
+  }
+  themeBtn.addEventListener("click", () => {
+    theme = THEMES[(THEMES.indexOf(theme) + 1) % THEMES.length];
+    try { localStorage.setItem("pose-theme", theme); } catch (e) { /* ignore */ }
+    applyTheme();
+  });
+
+  /* ---------- BibTeX copy ---------- */
+  document.getElementById("copy").addEventListener("click", (ev) => {
+    const text = document.getElementById("bibtext").textContent;
+    const done = () => { ev.target.textContent = "Copied"; setTimeout(() => ev.target.textContent = "Copy", 1500); };
+    if (navigator.clipboard) navigator.clipboard.writeText(text).then(done, () => {});
+  });
+  document.querySelectorAll('.btn[aria-disabled="true"]').forEach(a =>
+    a.addEventListener("click", e => e.preventDefault()));
+
+  /* ---------- Hero: 33-bus feeder with posterior samples ---------- */
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+
+  // Bus positions of the IEEE 33-bus feeder, as in the paper's feeder figure:
+  // [column, row]; row 0 is the main feeder 1-18.
+  const POS = { 1: [0, 0] };
+  for (let b = 2; b <= 18; b++) POS[b] = [b - 1, 0];
+  for (let b = 19; b <= 22; b++) POS[b] = [b - 18, -1];
+  for (let b = 23; b <= 25; b++) POS[b] = [b - 21, 1];
+  for (let b = 26; b <= 33; b++) POS[b] = [b - 21, 2];
+  const EDGES = [];
+  for (let b = 1; b < 18; b++) EDGES.push([b, b + 1]);
+  EDGES.push([2, 19], [19, 20], [20, 21], [21, 22], [3, 23], [23, 24], [24, 25], [6, 26]);
+  for (let b = 26; b < 33; b++) EDGES.push([b, b + 1]);
+  const PV = new Set([13, 14, 15, 16, 17, 18]);
+  const METERS = {
+    prior: { head: false, v: [], p: [] },
+    S1: { head: true, v: [], p: [] },
+    S2: { head: true, v: [18, 22, 33], p: [] },
+    S3: { head: true, v: [18, 22, 33], p: [16, 30] },
+  };
+  const DESC = {
+    prior: "Prior: no real-time measurements.",
+    S1: "S1: active and reactive power at the feeder head.",
+    S2: "S2: S1 plus voltage magnitudes at buses 18, 22 and 33.",
+    S3: "S3: S2 plus the active power of the substations at buses 16 and 30.",
+  };
+  const ORDER = ["prior", "S1", "S2", "S3"];
+  // Demo measurement sets: each adds metered
+  // substations to the previous set, largest nominal load first; bus 13 is never
+  // metered. Meters and descriptions come from the data file.
+  const DEMO = ["S4", "S5", "S6", "S7"];
+  const DEMO_DESC = {
+    S4: "S4: S3 plus six more metered substations, the largest loads (buses 7, 8, 24, 25, 31, 32); 8 in total.",
+    S5: "S5: S4 plus eight more metered substations; 16 in total.",
+    S6: "S6: S5 plus eight more metered substations; 24 in total.",
+    S7: "S7: every substation metered except bus 13. Its cloud stays wide: the feeder-head measurement is too coarse to pin down a single substation.",
+  };
+
+  // Deterministic random numbers for jitter, noise and illustrative fallbacks.
+  function rng(seed) {
+    let s = seed >>> 0;
+    return () => { s = (s + 0x6D2B79F5) >>> 0; let t = s; t = Math.imul(t ^ t >>> 15, t | 1);
+      t ^= t + Math.imul(t ^ t >>> 7, t | 61); return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+  }
+  function normals(r, n) {
+    const out = new Float32Array(n);
+    for (let i = 0; i < n; i += 2) {
+      const u = Math.max(r(), 1e-9), v = r(), m = Math.sqrt(-2 * Math.log(u));
+      out[i] = m * Math.cos(2 * Math.PI * v); if (i + 1 < n) out[i + 1] = m * Math.sin(2 * Math.PI * v);
+    }
+    return out;
+  }
+
+  /* Load data. Real arrays come from assets/samples.js.
+     States missing from the data are built here as clearly labelled illustrations,
+     so real samples can be swapped in later without touching this code. */
+  function loadStates() {
+    const D = window.POSE_DATA;
+    const buses = []; for (let b = 2; b <= 33; b++) buses.push(b);
+    const nb = buses.length;
+    const states = {};
+    let truth, K;
+    if (D && D.truth && D.posterior) {
+      truth = D.truth; K = (D.posterior.S1 || D.posterior.S2).length;
+      const take = (arr) => arr.map(row => Float32Array.from(row));
+      if (D.prior) states.prior = { s: take(D.prior), real: true };
+      for (const k of ["S1", "S2", "S3"]) if (D.posterior[k]) states[k] = { s: take(D.posterior[k]), real: true };
+      for (const k of DEMO) {
+        const m = D.measured && D.measured[k];
+        if (!D.posterior[k] || !m) continue;
+        states[k] = { s: take(D.posterior[k]), real: true, demo: true };
+        METERS[k] = { head: !!m.head_PQ, v: m.voltage_buses, p: m.injection_buses };
+        DESC[k] = DEMO_DESC[k];
+        ORDER.push(k);
+      }
+    } else {
+      // No data file: a fully schematic feeder.
+      const r = rng(7); K = 100;
+      truth = buses.map((b) => (PV.has(b) ? -40 : 20) + 30 * (r() - 0.5));
+      const z = normals(r, K * nb);
+      states.S1 = { s: Array.from({ length: K }, (_, k) => Float32Array.from(buses.map((b, i) => truth[i] + 6 + 28 * z[k * nb + i]))), real: false };
+      states.S2 = { s: states.S1.s.map(row => row.map((v, i) => truth[i] + 0.8 * (v - truth[i]))), real: false };
+    }
+    const base = states.S1 || states.S2;
+    const mean = new Float32Array(nb);
+    for (const row of base.s) for (let i = 0; i < nb; i++) mean[i] += row[i] / K;
+    if (!states.prior) {
+      // Illustrative prior: the S1 samples widened about their mean.
+      states.prior = { s: base.s.map(row => row.map((v, i) => mean[i] + 1.7 * (v - mean[i]))), real: false };
+    }
+    if (!states.S3) {
+      // Illustrative S3: S2 with the two metered substations pinned near their truth.
+      const s2 = states.S2 || base;
+      const m2 = new Float32Array(nb);
+      for (const row of s2.s) for (let i = 0; i < nb; i++) m2[i] += row[i] / K;
+      const pin = new Set([16 - 2, 30 - 2]);
+      states.S3 = { s: s2.s.map(row => row.map((v, i) => pin.has(i) ? truth[i] + 0.12 * (v - m2[i]) : v)), real: false };
+    }
+    if (!states.S2) states.S2 = { s: base.s, real: false };
+    if (!states.S1) states.S1 = { s: base.s, real: false };
+    // WLS on the same measurements (real data only): estimate and 90% interval, kW.
+    if (D && D.wls) for (const k in D.wls) if (states[k] && states[k].real) {
+      const w = D.wls[k];
+      states[k].wls = { est: Float32Array.from(w.estimate), lo: Float32Array.from(w.lo90), hi: Float32Array.from(w.hi90),
+        s: w.samples ? w.samples.map(row => Float32Array.from(row)) : null };
+    }
+    const traj = D && D.trajectories ? D.trajectories : null;
+    return { buses, truth: Float32Array.from(truth), K, states, traj };
+  }
+
+  function quantile(sorted, q) {
+    const x = (sorted.length - 1) * q, lo = Math.floor(x), hi = Math.ceil(x);
+    return sorted[lo] + (sorted[hi] - sorted[lo]) * (x - lo);
+  }
+
+  function makeHero() {
+    const canvas = document.getElementById("feeder");
+    const ctx = canvas.getContext("2d");
+    const tip = document.getElementById("tip");
+    const caption = document.getElementById("caption");
+    const buttons = Array.from(document.querySelectorAll(".seg button"));
+    const data = loadStates();
+    const { buses, truth, K, states } = data;
+    const nb = buses.length;
+    buttons.forEach(b => { if (states[b.dataset.state]) b.hidden = false; });
+    document.getElementById("replay-label").textContent =
+      "Replay: noise → " + ORDER.join(" → ");
+
+    // Per-bus scale: the spread of the broadest state about the truth.
+    const scale = new Float32Array(nb);
+    for (let i = 0; i < nb; i++) {
+      const dev = states.prior.s.map(r => Math.abs(r[i] - truth[i])).sort((a, b) => a - b);
+      scale[i] = Math.max(quantile(dev, 0.95), 1e-3);
+    }
+    // Display coordinates per state: u along the cloud axis (truth at 0), w across it.
+    const jit = Float32Array.from({ length: K }, (_, k) => 2 * ((k * 0.6180339887 + 0.13) % 1) - 1);
+    function layoutState(name) {
+      const s = states[name].s;
+      const u = new Float32Array(K * nb), w = new Float32Array(K * nb), lo = new Float32Array(nb), hi = new Float32Array(nb);
+      for (let i = 0; i < nb; i++) {
+        const col = new Float32Array(K);
+        for (let k = 0; k < K; k++) {
+          const x = 0.8 * (s[k][i] - truth[i]) / scale[i];
+          col[k] = Math.max(-1, Math.min(1, x));
+        }
+        // Kernel density at each sample gives a violin-shaped jitter width.
+        const bw = 0.075; let dmax = 0; const dens = new Float32Array(K);
+        for (let k = 0; k < K; k++) { let d = 0; for (let j = 0; j < K; j++) { const z = (col[k] - col[j]) / bw; d += Math.exp(-0.5 * z * z); } dens[k] = d; if (d > dmax) dmax = d; }
+        for (let k = 0; k < K; k++) { u[k * nb + i] = col[k]; w[k * nb + i] = jit[k] * (0.25 + 0.75 * dens[k] / dmax); }
+        const sorted = Array.from(col).sort((a, b) => a - b);
+        lo[i] = quantile(sorted, 0.05); hi[i] = quantile(sorted, 0.95);
+      }
+      const W = states[name].wls, disp = (v, i) => 0.8 * (v - truth[i]) / scale[i];
+      const west = new Float32Array(nb), wlo = new Float32Array(nb), whi = new Float32Array(nb);
+      // WLS draws on the same per-bus scale: wu keeps values beyond the cloud's range
+      // (|wu| > 1) so they can be marked instead of piled up at the edge.
+      const wu = new Float32Array(K * nb), ww = new Float32Array(K * nb);
+      if (W) for (let i = 0; i < nb; i++) {
+        west[i] = disp(W.est[i], i); wlo[i] = disp(W.lo[i], i); whi[i] = disp(W.hi[i], i);
+        if (!W.s) continue;
+        const raw = new Float32Array(K), col = new Float32Array(K);
+        for (let k = 0; k < K; k++) { raw[k] = disp(W.s[k][i], i); col[k] = Math.max(-1, Math.min(1, raw[k])); }
+        const bw = 0.075; let dmax = 0; const dens = new Float32Array(K);
+        for (let k = 0; k < K; k++) { let d = 0; for (let j = 0; j < K; j++) { const z = (col[k] - col[j]) / bw; d += Math.exp(-0.5 * z * z); } dens[k] = d; if (d > dmax) dmax = d; }
+        for (let k = 0; k < K; k++) { wu[k * nb + i] = raw[k]; ww[k * nb + i] = jit[k] * (0.25 + 0.75 * dens[k] / dmax); }
+      }
+      return { u, w, lo, hi, west, wlo, whi, wu, ww, wa: W && W.s ? 1 : 0 };
+    }
+    const L = {}; for (const n of ORDER) L[n] = layoutState(n);
+    const noise = (() => { const r = rng(11); const z = normals(r, K * nb); const w = new Float32Array(K * nb);
+      for (let k = 0; k < K; k++) for (let i = 0; i < nb; i++) { z[k * nb + i] = Math.max(-1, Math.min(1, 0.45 * z[k * nb + i])); w[k * nb + i] = jit[k] * 0.9; }
+      return { u: z, w, lo: new Float32Array(nb).fill(-0.9), hi: new Float32Array(nb).fill(0.9),
+        west: new Float32Array(nb), wlo: new Float32Array(nb), whi: new Float32Array(nb),
+        wu: new Float32Array(K * nb), ww: new Float32Array(K * nb), wa: 0 }; })();
+    const hasWls = ORDER.some(n => L[n].wa);
+    let showWls = hasWls;
+
+    // Animated display state.
+    const cur = { u: Float32Array.from(L.prior.u), w: Float32Array.from(L.prior.w), lo: Float32Array.from(L.prior.lo), hi: Float32Array.from(L.prior.hi),
+      west: new Float32Array(nb), wlo: new Float32Array(nb), whi: new Float32Array(nb),
+      wu: new Float32Array(K * nb), ww: new Float32Array(K * nb), wa: 0 };
+    let from = null, to = L.prior, t0 = 0, dur = 0, anim = 0, active = "prior", meterAlpha = 1, intervalAlpha = 1;
+
+    let colors = {};
+    function readColors() {
+      const cs = getComputedStyle(root);
+      const g = (v) => cs.getPropertyValue(v).trim();
+      colors = { ink: g("--ink"), muted: g("--muted"), line: g("--line"), pv: g("--pv"), truth: g("--truth"),
+        sample: g("--sample"), alpha: parseFloat(g("--sample-alpha")) || 0.55, card: g("--card"), accent: g("--accent"), wls: g("--wls") };
+    }
+
+    // Geometry.
+    let G = null;
+    function resize() {
+      const cssW = canvas.parentElement.clientWidth;
+      const vertical = cssW < 620;
+      let H, place, half, thick, label;
+      if (!vertical) {
+        const pad = 22, colW = (cssW - 2 * pad - 14) / 17;   // 14 px: room for the WLS bar at bus 18
+        half = Math.min(42, Math.max(28, colW * 0.75)); thick = Math.min(17, colW * 0.32);
+        const gap = 24, rowH = 2 * half + gap, top = half + 14;
+        H = Math.round(top + 3 * rowH + half + 14);
+        place = (b) => [pad + POS[b][0] * colW, top + (POS[b][1] + 1) * rowH];
+        label = (x, y) => [x, y + half + 12];
+      } else {
+        const pad = 14, colW = (cssW - 2 * pad - 16) / 3.84;
+        half = colW * 0.42; thick = 9.5;
+        const rowH = 31, top = 16;
+        H = Math.round(top + 17 * rowH + 18);
+        place = (b) => [pad + half + 8 + (POS[b][1] + 1) * colW, top + POS[b][0] * rowH];
+        label = (x, y) => [x + half + 4, y + 3.5];
+      }
+      const dpr = Math.min(window.devicePixelRatio || 1, 2.5);
+      canvas.style.height = H + "px";
+      canvas.width = Math.round(cssW * dpr); canvas.height = Math.round(H * dpr);
+      G = { W: cssW, H, vertical, place, half, thick, label, dpr };
+      G.xy = {}; for (let b = 1; b <= 33; b++) G.xy[b] = place(b);
+      draw();
+    }
+
+    function meterGlyph(kind, x, y, r) {
+      ctx.beginPath();
+      if (kind === "head") { ctx.moveTo(x, y - r * 1.15); ctx.lineTo(x + r, y + r * 0.75); ctx.lineTo(x - r, y + r * 0.75); ctx.closePath(); }
+      else if (kind === "v") { ctx.moveTo(x, y - r * 1.2); ctx.lineTo(x + r * 1.2, y); ctx.lineTo(x, y + r * 1.2); ctx.lineTo(x - r * 1.2, y); ctx.closePath(); }
+      else { ctx.rect(x - r, y - r, 2 * r, 2 * r); }
+      ctx.fill(); ctx.stroke();
+    }
+
+    function draw() {
+      if (!G) return;
+      const { dpr, vertical, half, thick } = G;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, G.W, G.H);
+      // Lines (orthogonal routing as in the feeder figure).
+      ctx.strokeStyle = colors.line; ctx.lineWidth = vertical ? 1.2 : 1.6; ctx.lineJoin = "round";
+      ctx.beginPath();
+      for (const [a, b] of EDGES) {
+        const [x1, y1] = G.xy[a], [x2, y2] = G.xy[b];
+        ctx.moveTo(x1, y1);
+        if (x1 !== x2 && y1 !== y2) { if (vertical) ctx.lineTo(x2, y1); else ctx.lineTo(x1, y2); }
+        ctx.lineTo(x2, y2);
+      }
+      ctx.stroke();
+      // Clouds.
+      const dir = vertical ? [1, 0] : [0, -1];          // + = above the truth (more consumption)
+      const across = vertical ? [0, 1] : [1, 0];
+      ctx.lineCap = "round";
+      // With WLS shown, PoSE and WLS share each bus as two half-width clouds:
+      // PoSE on the left (top on narrow screens), WLS on the right.
+      const sp = showWls ? cur.wa : 0, cw = 0.55 * thick;
+      const pOff = -cw * sp, pW = 1 - 0.45 * sp;
+      for (let i = 0; i < nb; i++) {
+        const [x0, y0] = G.xy[buses[i]], x = x0 + across[0] * pOff, y = y0 + across[1] * pOff;
+        // 90% interval.
+        ctx.strokeStyle = `rgba(${colors.sample}, ${0.35 * intervalAlpha})`; ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(x + dir[0] * cur.lo[i] * half, y + dir[1] * cur.lo[i] * half);
+        ctx.lineTo(x + dir[0] * cur.hi[i] * half, y + dir[1] * cur.hi[i] * half);
+        ctx.stroke();
+      }
+      ctx.fillStyle = `rgba(${colors.sample}, ${colors.alpha})`;
+      const r = vertical ? 1.35 : 1.55;
+      ctx.beginPath();
+      for (let k = 0; k < K; k++) for (let i = 0; i < nb; i++) {
+        const j = k * nb + i, [x, y] = G.xy[buses[i]];
+        const px = x + dir[0] * cur.u[j] * half + across[0] * (pOff + cur.w[j] * thick * pW);
+        const py = y + dir[1] * cur.u[j] * half + across[1] * (pOff + cur.w[j] * thick * pW);
+        ctx.moveTo(px + r, py); ctx.arc(px, py, r, 0, 6.2832);
+      }
+      ctx.fill();
+      // Meters of the active set (outline only, so the node stays visible).
+      const M = METERS[active];
+      ctx.globalAlpha = meterAlpha; ctx.lineWidth = 1.7; ctx.strokeStyle = colors.ink; ctx.fillStyle = "rgba(0,0,0,0)";
+      if (M.head) { const [x, y] = G.xy[1]; meterGlyph("head", x, y, 6.5); }
+      for (const b of M.v) { const [x, y] = G.xy[b]; meterGlyph("v", x, y, 6.8); }
+      for (const b of M.p) { const [x, y] = G.xy[b]; meterGlyph("p", x, y, 6.2); }
+      ctx.globalAlpha = 1;
+      // WLS on the same measurements: its 100 Gaussian draws as a purple half-cloud
+      // beside the PoSE half-cloud, with its 90% interval as a faint line; draws beyond
+      // the cloud's range are not drawn, and a triangle at that end marks them.
+      const wa = sp;
+      if (wa > 0.01) {
+        ctx.globalAlpha = wa;
+        for (let i = 0; i < nb; i++) {
+          const [x0, y0] = G.xy[buses[i]], x = x0 + across[0] * cw, y = y0 + across[1] * cw;
+          const cl = (v) => Math.max(-1, Math.min(1, v));
+          ctx.strokeStyle = colors.wls; ctx.globalAlpha = 0.45 * wa; ctx.lineWidth = 2; ctx.beginPath();
+          ctx.moveTo(x + dir[0] * cl(cur.wlo[i]) * half, y + dir[1] * cl(cur.wlo[i]) * half);
+          ctx.lineTo(x + dir[0] * cl(cur.whi[i]) * half, y + dir[1] * cl(cur.whi[i]) * half);
+          ctx.stroke();
+        }
+        ctx.globalAlpha = 0.75 * wa; ctx.fillStyle = colors.wls;
+        ctx.beginPath();
+        const out = new Uint8Array(2 * nb);   // draws beyond the range, below / above
+        for (let k = 0; k < K; k++) for (let i = 0; i < nb; i++) {
+          const j = k * nb + i, v = cur.wu[j];
+          if (Math.abs(v) > 1) { out[2 * i + (v > 0 ? 1 : 0)] = 1; continue; }
+          const [x0, y0] = G.xy[buses[i]];
+          const px = x0 + dir[0] * v * half + across[0] * (cw + cur.ww[j] * thick * 0.55);
+          const py = y0 + dir[1] * v * half + across[1] * (cw + cur.ww[j] * thick * 0.55);
+          ctx.moveTo(px + r, py); ctx.arc(px, py, r, 0, 6.2832);
+        }
+        ctx.fill();
+        ctx.globalAlpha = wa;
+        for (let i = 0; i < nb; i++) for (const sgn of [-1, 1]) {
+          if (!out[2 * i + (sgn > 0 ? 1 : 0)]) continue;
+          const [x0, y0] = G.xy[buses[i]], x = x0 + across[0] * cw, y = y0 + across[1] * cw;
+          const ex = x + dir[0] * sgn * half, ey = y + dir[1] * sgn * half;
+          ctx.beginPath();
+          ctx.moveTo(ex + dir[0] * sgn * 4, ey + dir[1] * sgn * 4);
+          ctx.lineTo(ex + across[0] * 3, ey + across[1] * 3); ctx.lineTo(ex - across[0] * 3, ey - across[1] * 3);
+          ctx.closePath(); ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+      }
+      // Truth markers: a bar across the cloud on wide screens; on narrow screens the
+      // bar would run along the feeder line, so a ring marks the truth instead.
+      ctx.strokeStyle = colors.truth;
+      if (!vertical) {
+        ctx.lineWidth = 1.6; ctx.beginPath();
+        for (let i = 0; i < nb; i++) { const [x, y] = G.xy[buses[i]], e = thick + 3; ctx.moveTo(x - e, y); ctx.lineTo(x + e, y); }
+        ctx.stroke();
+      }
+      for (let b = 1; b <= 33; b++) {
+        const [x, y] = G.xy[b], rr = PV.has(b) ? 3.4 : 2.6;
+        ctx.beginPath(); ctx.arc(x, y, rr, 0, 6.2832);
+        ctx.fillStyle = PV.has(b) ? colors.pv : (b === 1 ? colors.ink : colors.muted);
+        ctx.fill();
+        if (vertical && b > 1) { ctx.lineWidth = 1.4; ctx.beginPath(); ctx.arc(x, y, rr + 2.4, 0, 6.2832); ctx.stroke(); }
+      }
+      // Labels.
+      ctx.fillStyle = colors.muted; ctx.font = `500 ${vertical ? 9.5 : 10}px Inter, system-ui, sans-serif`;
+      ctx.textAlign = vertical ? "left" : "center";
+      const show = vertical ? [1, 2, 6, 13, 16, 18, 19, 22, 23, 25, 26, 30, 33] : Object.keys(POS).map(Number);
+      for (const b of show) {
+        let [x, y] = G.xy[b];
+        if (b === 1) { ctx.fillText("1", vertical ? x + 9 : x, vertical ? y + 3.5 : y + 18); continue; }
+        const [lx, ly] = G.label(x, y); ctx.fillText(String(b), lx, ly);
+      }
+    }
+
+    function ease(t) { return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; }
+    function step(now) {
+      const t = Math.min(1, (now - t0) / dur);
+      const n = K * nb;
+      for (let k = 0; k < K; k++) {
+        const delay = (k / K) * 0.22;
+        const e = ease(Math.max(0, Math.min(1, (t - delay) / (1 - 0.22))));
+        for (let i = 0; i < nb; i++) { const j = k * nb + i; cur.u[j] = from.u[j] + (to.u[j] - from.u[j]) * e; cur.w[j] = from.w[j] + (to.w[j] - from.w[j]) * e; }
+      }
+      const e = ease(t);
+      for (let i = 0; i < nb; i++) { cur.lo[i] = from.lo[i] + (to.lo[i] - from.lo[i]) * e; cur.hi[i] = from.hi[i] + (to.hi[i] - from.hi[i]) * e; }
+      const wt = to.wa ? to : from;
+      for (let i = 0; i < nb; i++) {
+        cur.west[i] = from.west[i] + (wt.west[i] - from.west[i]) * e;
+        cur.wlo[i] = from.wlo[i] + (wt.wlo[i] - from.wlo[i]) * e; cur.whi[i] = from.whi[i] + (wt.whi[i] - from.whi[i]) * e;
+      }
+      for (let j = 0; j < K * nb; j++) { cur.wu[j] = from.wu[j] + (wt.wu[j] - from.wu[j]) * e; cur.ww[j] = from.ww[j] + (wt.ww[j] - from.ww[j]) * e; }
+      cur.wa = from.wa + (to.wa - from.wa) * e;
+      meterAlpha = Math.min(1, t * 2.5);
+      draw();
+      if (t < 1) anim = requestAnimationFrame(step); else { anim = 0; if (onDone) { const f = onDone; onDone = null; f(); } }
+    }
+    let onDone = null;
+    function transition(target, ms, done) {
+      cancelAnimationFrame(anim);
+      // A set entered from one without WLS starts its bars at the target, fading in.
+      const wsrc = cur.wa > 0.01 ? cur : target;
+      from = { u: Float32Array.from(cur.u), w: Float32Array.from(cur.w), lo: Float32Array.from(cur.lo), hi: Float32Array.from(cur.hi),
+        west: Float32Array.from(wsrc.west), wlo: Float32Array.from(wsrc.wlo), whi: Float32Array.from(wsrc.whi),
+        wu: Float32Array.from(wsrc.wu), ww: Float32Array.from(wsrc.ww), wa: cur.wa };
+      to = target; onDone = done || null;
+      if (reduceMotion.matches || ms <= 0) {
+        cur.u.set(to.u); cur.w.set(to.w); cur.lo.set(to.lo); cur.hi.set(to.hi); cur.wa = to.wa;
+        if (to.wa) { cur.west.set(to.west); cur.wlo.set(to.wlo); cur.whi.set(to.whi); cur.wu.set(to.wu); cur.ww.set(to.ww); }
+        meterAlpha = 1; draw(); if (done) done(); return;
+      }
+      t0 = performance.now(); dur = ms; anim = requestAnimationFrame(step);
+    }
+
+    function setCaption(name) {
+      const st = states[name];
+      const what = name === "prior" ? "Learned prior samples" : "PoSE posterior samples";
+      const badge = st.real ? '<span class="badge real">Real samples</span>' : '<span class="badge illus">Illustrative</span>';
+      const src = st.real
+        ? `<b>${what}, IEEE 33-bus, a typical midday test snapshot, active power, 100 samples, drawn with an earlier prior over active power alone.</b> ` +
+          "PoSE's advantage over WLS on this snapshot equals its median advantage across the test snapshots of this setting. "
+        : `<b>Illustrative ${name === "prior" ? "prior" : "posterior"}, schematic, not a model output.</b> `;
+      const demo = st.demo ? " Demonstration measurement set for this page." : "";
+      const wls = showWls && st.wls ? (G && G.vertical ? " Below" : " Beside") + " each PoSE cloud (blue), the purple cloud holds 100 samples of the WLS posterior " +
+        "from the same measurements, with diagonal Gaussian pseudo-measurements; a triangle marks WLS samples beyond the cloud's range." : "";
+      caption.innerHTML = badge + src + DESC[name] + demo + (name === "prior" ? " The transition from noise is schematic." : "") + wls +
+        " Each cloud is centred on the true injection of its bus and scaled per bus; samples " +
+        (G && G.vertical ? "right of the ring" : "above the bar") + " exceed the true injection.";
+      canvas.setAttribute("aria-label", `IEEE 33-bus feeder, ${what.toLowerCase()} per bus. ${DESC[name]}`);
+    }
+
+    let auto = null;
+    function select(name, ms = 950, fromUser = true) {
+      if (fromUser) stopAuto();
+      active = name; meterAlpha = 0;
+      buttons.forEach(b => b.setAttribute("aria-pressed", String(b.dataset.state === name)));
+      setCaption(name);
+      transition(L[name], ms);
+    }
+    function stopAuto() { if (auto) { clearTimeout(auto); auto = null; } }
+    function playSequence() {
+      stopAuto();
+      if (reduceMotion.matches) { select("S2", 0, false); return; }
+      cur.u.set(noise.u); cur.w.set(noise.w); cur.lo.set(noise.lo); cur.hi.set(noise.hi); cur.wa = 0;
+      active = "prior"; intervalAlpha = 1;
+      buttons.forEach(b => b.setAttribute("aria-pressed", String(b.dataset.state === "prior")));
+      setCaption("prior"); draw();
+      const seq = ORDER.slice(1); let idx = 0;
+      const next = () => { if (idx >= seq.length) { auto = null; return; } auto = setTimeout(() => { select(seq[idx++], 1000, false); next(); }, idx < 3 ? 2600 : 2200); };
+      auto = setTimeout(() => transition(L.prior, 1800, next), 350);
+    }
+
+    buttons.forEach(b => b.addEventListener("click", () => select(b.dataset.state)));
+    document.getElementById("replay").addEventListener("click", playSequence);
+    const wlsBtn = document.getElementById("wls-toggle");
+    if (hasWls) {
+      wlsBtn.hidden = false; document.getElementById("lg-wls").hidden = false;
+      wlsBtn.addEventListener("click", () => {
+        showWls = !showWls; wlsBtn.setAttribute("aria-pressed", String(showWls));
+        document.getElementById("lg-wls").hidden = !showWls; setCaption(active); draw();
+      });
+    }
+
+    // Tooltip.
+    function busInfo(b) {
+      const parts = ["Bus " + b];
+      if (b === 1) parts.push("primary substation (slack)");
+      if (PV.has(b)) parts.push("PV-heavy");
+      const M = METERS[active];
+      if (b === 1 && M.head) parts.push("P, Q measured");
+      if (M.v.includes(b)) parts.push("voltage measured");
+      if (M.p.includes(b)) parts.push("injection measured");
+      return parts.join(" · ");
+    }
+    function hover(ev) {
+      if (!G) return;
+      const rect = canvas.getBoundingClientRect();
+      const x = ev.clientX - rect.left, y = ev.clientY - rect.top;
+      let best = null, bd = 1e9;
+      for (let b = 1; b <= 33; b++) { const [bx, by] = G.xy[b];
+        const dx = (x - bx) / (G.vertical ? G.half : G.thick + 8), dy = (y - by) / (G.vertical ? 14 : G.half);
+        const d = dx * dx + dy * dy; if (d < bd) { bd = d; best = b; } }
+      if (best && bd < 1.2) {
+        tip.textContent = busInfo(best); const [bx, by] = G.xy[best];
+        tip.style.left = Math.max(70, Math.min(G.W - 70, bx)) + "px"; tip.style.top = (by - (G.vertical ? 8 : G.half * 0.6)) + "px"; tip.style.opacity = 1;
+      } else tip.style.opacity = 0;
+    }
+    canvas.addEventListener("pointermove", hover);
+    canvas.addEventListener("pointerleave", () => tip.style.opacity = 0);
+
+    readColors();
+    new ResizeObserver(() => resize()).observe(canvas.parentElement);
+    resize();
+
+    // Start the sequence when the hero is first visible.
+    let started = false;
+    const io = new IntersectionObserver((es) => {
+      if (!started && es.some(e => e.isIntersecting)) { started = true; playSequence(); io.disconnect(); }
+    }, { threshold: 0.25 });
+    if (reduceMotion.matches) { select("S2", 0, false); started = true; } else { setCaption("prior"); io.observe(canvas); }
+
+    return {
+      refreshColors() { readColors(); draw(); },
+    };
+  }
+
+  let hero = null;
+  hero = makeHero();
+  applyTheme();
+  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => hero.refreshColors());
+})();
+</script>
+</body>
+</html>

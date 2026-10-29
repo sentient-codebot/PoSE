@@ -1,0 +1,4 @@
+--data data/ausgrid_p/snapshots.npz --output_dir results/ausgrid_p/priors/real --run_name cyclic-w256 --context cyclic --width 256 --seed 0 --dropout 0.1 --weight_decay 0.1 --num_steps 10000
+--data data/ausgrid_p/snapshots.npz --output_dir results/ausgrid_p/priors/real --run_name cyclic-w512 --context cyclic --width 512 --seed 0 --dropout 0.1 --weight_decay 0.1 --num_steps 10000
+--data data/ausgrid_p/snapshots.npz --output_dir results/ausgrid_p/priors/real --run_name full-w256 --context full --width 256 --seed 0 --dropout 0.1 --weight_decay 0.1 --num_steps 10000
+--data data/ausgrid_p/snapshots.npz --output_dir results/ausgrid_p/priors/real --run_name full-w512 --context full --width 512 --seed 0 --dropout 0.1 --weight_decay 0.1 --num_steps 10000

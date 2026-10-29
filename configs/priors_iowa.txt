@@ -1,0 +1,1 @@
+--data data/iowa/snapshots.npz --output_dir results/iowa/priors/iowa --run_name s0 --seed 0 --context cyclic --width 512 --dropout 0.1 --weight_decay 0.1 --num_steps 10000

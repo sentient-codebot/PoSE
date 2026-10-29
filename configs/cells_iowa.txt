@@ -1,0 +1,5 @@
+--data data/iowa/snapshots.npz --mset S2 --noise nominal --design extended --chunk 10 --method B1 --output_dir results/iowa/cells/iowa/iowa_S2_nominal_B1
+--data data/iowa/snapshots.npz --mset S2 --noise nominal --design extended --chunk 10 --method B2 --output_dir results/iowa/cells/iowa/iowa_S2_nominal_B2
+--data data/iowa/snapshots.npz --mset S2 --noise nominal --design extended --chunk 10 --method B3 --hyper results/iowa/hyper/iowa_S2_nominal.json --output_dir results/iowa/cells/iowa/iowa_S2_nominal_B3
+--data data/iowa/snapshots.npz --mset S2 --noise nominal --design extended --chunk 10 --prior checkpoints/prior_iowa.pt --method M2 --sampler euler --output_dir results/iowa/cells/iowa/iowa_S2_nominal_M2-euler
+--data data/iowa/snapshots.npz --mset S2 --noise nominal --design extended --chunk 10 --method B7 --hyper results/iowa/hyper/iowa_S2_nominal_b7.json --output_dir results/iowa/cells/iowa/iowa_S2_nominal_B7

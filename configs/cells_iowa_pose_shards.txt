@@ -1,0 +1,4 @@
+--data data/iowa/snapshots.npz --mset S2 --noise nominal --design extended --chunk 10 --prior checkpoints/prior_iowa.pt --method M2 --sampler euler --shard 0 --num_shards 4 --output_dir results/iowa/shards/iowa_S2_nominal_M2-euler/shard0
+--data data/iowa/snapshots.npz --mset S2 --noise nominal --design extended --chunk 10 --prior checkpoints/prior_iowa.pt --method M2 --sampler euler --shard 1 --num_shards 4 --output_dir results/iowa/shards/iowa_S2_nominal_M2-euler/shard1
+--data data/iowa/snapshots.npz --mset S2 --noise nominal --design extended --chunk 10 --prior checkpoints/prior_iowa.pt --method M2 --sampler euler --shard 2 --num_shards 4 --output_dir results/iowa/shards/iowa_S2_nominal_M2-euler/shard2
+--data data/iowa/snapshots.npz --mset S2 --noise nominal --design extended --chunk 10 --prior checkpoints/prior_iowa.pt --method M2 --sampler euler --shard 3 --num_shards 4 --output_dir results/iowa/shards/iowa_S2_nominal_M2-euler/shard3

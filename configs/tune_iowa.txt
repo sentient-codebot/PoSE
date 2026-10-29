@@ -1,0 +1,2 @@
+--data data/iowa/snapshots.npz --prior checkpoints/prior_iowa.pt --tasks b3 --output results/iowa/hyper/iowa_S2_nominal.json
+--data data/iowa/snapshots.npz --prior checkpoints/prior_iowa.pt --tasks b7 --output results/iowa/hyper/iowa_S2_nominal_b7.json
